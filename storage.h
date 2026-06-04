@@ -9,33 +9,10 @@
 
 extern WebServer server;   // defined in webui.h
 
-// ─── Device SN ───────────────────────────────────────────────────────────────
-#define DEVICE_SN_FILE "/device_sn.txt"
-
-void loadDeviceSN() {
-  String val = readFile(DEVICE_SN_FILE);   // forward use — readFile defined below
-  // will be called after readFile is defined, so use SPIFFS directly here
-  File f = SPIFFS.open(DEVICE_SN_FILE);
-  if (!f || f.isDirectory()) return;
-  String sn;
-  while (f.available()) sn += (char)f.read();
-  f.close();
-  sn.trim();
-  if (sn.length() > 0) {
-    deviceSN = sn;
-    Serial.println("[Config] DeviceSN: " + deviceSN);
-  }
-}
-
-void saveDeviceSN(String sn) {
-  sn.trim();
-  if (sn.length() == 0) return;
-  File f = SPIFFS.open(DEVICE_SN_FILE, FILE_WRITE);
-  if (!f) return;
-  f.print(sn);
-  f.close();
-  deviceSN = sn;
-  Serial.println("[Config] DeviceSN saved: " + deviceSN);
+// ─── Helper: get best available IP for redirect ───────────────────────────────
+String getDeviceIP() {
+  if (WiFi.localIP().toString() != "0.0.0.0") return WiFi.localIP().toString();
+  return WiFi.softAPIP().toString();
 }
 
 // ─── Read / Write ─────────────────────────────────────────────────────────────
@@ -49,14 +26,49 @@ String readFile(const char* path) {
 }
 
 void writeFileAndRedirect(const char* path, const char* content) {
+  Serial.println("[SPIFFS] Writing: " + String(path));
+  Serial.printf("[SPIFFS] Free: %u bytes\n", SPIFFS.totalBytes() - SPIFFS.usedBytes());
+
   File f = SPIFFS.open(path, FILE_WRITE);
-  if (!f) { server.send(500, "text/plain", "Write failed"); return; }
+  if (!f) {
+    Serial.println("[SPIFFS] ERROR: Cannot open file for writing");
+    server.send(500, "text/html",
+      "<h3>Write failed</h3>"
+      "<p>SPIFFS error — try <a href='/format'>Format SPIFFS</a> then reconfigure.</p>"
+      "<a href='/'>Back</a>");
+    return;
+  }
   f.print(content);
   f.close();
-  Serial.println("[SPIFFS] Saved: " + String(path));
-  String url  = "http://" + WiFi.localIP().toString() + "/";
+  Serial.println("[SPIFFS] Saved OK");
+
+  String url  = "http://" + getDeviceIP() + "/";
   String html = "<script>alert('Saved!');location.replace('" + url + "');</script>";
   server.send(200, "text/html", html);
+}
+
+// ─── Device SN ───────────────────────────────────────────────────────────────
+#define DEVICE_SN_FILE "/device_sn.txt"
+
+void loadDeviceSN() {
+  // readFile is defined above so safe to call here
+  String sn = readFile(DEVICE_SN_FILE);
+  sn.trim();
+  if (sn.length() > 0) {
+    deviceSN = sn;
+    Serial.println("[Config] DeviceSN: " + deviceSN);
+  }
+}
+
+void saveDeviceSN(String sn) {
+  sn.trim();
+  if (sn.length() == 0) return;
+  File f = SPIFFS.open(DEVICE_SN_FILE, FILE_WRITE);
+  if (!f) { Serial.println("[SPIFFS] ERROR: Cannot save DeviceSN"); return; }
+  f.print(sn);
+  f.close();
+  deviceSN = sn;
+  Serial.println("[Config] DeviceSN saved: " + deviceSN);
 }
 
 // ─── Load LoRa config ─────────────────────────────────────────────────────────
@@ -101,7 +113,6 @@ void loadWiFiConfig() {
   if (s_pwd  != "") s_pwd.toCharArray(wifiPASS,  sizeof(wifiPASS));
 
   if (s_dhcp == "0" && s_ip != "") {
-    // Static IP mode
     localIP.fromString(s_ip);
     gatewayIP.fromString(s_gw);
     subnetIP.fromString(s_subnet);

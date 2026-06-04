@@ -20,7 +20,8 @@ void handleStatus() {
   json += "\"lora\":"    + String(loraReady ? 1 : 0) + ",";
   json += "\"relay\":"   + String(relayState ? 1 : 0) + ",";
   json += "\"uptime\":"  + String(millis() / 1000) + ",";
-  json += "\"pause\":"   + String(pauseloop ? 1 : 0);
+  json += "\"pause\":"   + String(pauseloop ? 1 : 0) + ",";
+  json += "\"spiffs_free\":" + String(SPIFFS.totalBytes() - SPIFFS.usedBytes());
   json += "}";
   server.send(200, "application/json", json);
 }
@@ -160,6 +161,14 @@ void handleRoot() {
     h += "<form method='POST' action='/update' enctype='multipart/form-data'>";
     h += "<input type='file' name='update' style='margin:8px 0'><br>";
     h += "<input type='submit' value='Upload Firmware'></form></div>";
+
+    h += "<div class='card'><h2>SPIFFS Storage</h2>";
+    h += "<div class='row'><span class='label'>Free space</span>"
+         "<span class='val'>" + String(SPIFFS.totalBytes() - SPIFFS.usedBytes()) + " bytes</span></div>";
+    h += "<div class='row'><span class='label'>Total</span>"
+         "<span class='val'>" + String(SPIFFS.totalBytes()) + " bytes</span></div>";
+    h += "<br><a href='/format' onclick=\"return confirm('Format SPIFFS? All config will be erased!')\">"
+         "<button class='btn-red' type='button'>Format SPIFFS</button></a></div>";
   }
 
   h += "</body></html>";
@@ -173,9 +182,20 @@ void handleFileUpload() {
   else if (u.status == UPLOAD_FILE_END)   { Update.end(true); Serial.printf("OTA: %u bytes\n", u.totalSize); }
 }
 
+void handleFormat() {
+  Serial.println("[SPIFFS] Formatting...");
+  SPIFFS.format();
+  SPIFFS.begin(true);
+  Serial.println("[SPIFFS] Format done");
+  server.send(200, "text/html",
+    "<h3>SPIFFS formatted</h3>"
+    "<p>All config cleared. <a href='/'>Go back</a> and reconfigure.</p>");
+}
+
 void startWebServer() {
   server.on("/",       handleRoot);
   server.on("/status", handleStatus);
+  server.on("/format", handleFormat);
   server.on("/update", HTTP_POST,
     []() { server.send(200,"text/html","<script>alert('Done! Rebooting...');</script>"); delay(500); ESP.restart(); },
     handleFileUpload);
