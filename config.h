@@ -43,12 +43,10 @@ bool          loraReady      = false;
 bool          relayState     = false;
 bool          pauseloop      = false;
 bool          webStarted     = false;
-bool          wifiWasLost    = false;
 unsigned long lastLoRaTx     = 0;
 unsigned long lastSensorRead = 0;
 unsigned long lastWiFiCheck  = 0;
 unsigned long lastDebugPrint = 0;
-unsigned long wifiLostAt     = 0;
 
 // ─── Sensor readings ──────────────────────────────────────────────────────────
 int   distanceCM  = 0;

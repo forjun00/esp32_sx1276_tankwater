@@ -22,7 +22,6 @@
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "esp_sleep.h"
 #include <WiFi.h>
 
 #include "config.h"
@@ -30,15 +29,6 @@
 #include "lora_module.h"
 #include "storage.h"
 #include "webui.h"
-
-// ─── Deep sleep ───────────────────────────────────────────────────────────────
-void deepSleep(uint64_t seconds) {
-  Serial.println("[Sleep] " + String(seconds) + "s");
-  digitalWrite(PIN_TRIGGER, LOW);
-  Serial.flush();
-  esp_sleep_enable_timer_wakeup(seconds * 1000000ULL);
-  esp_deep_sleep_start();
-}
 
 // ═══════════════════════════════════════════════════════════════════
 //  Setup
@@ -50,8 +40,7 @@ void setup() {
   pinMode(PIN_TRIGGER, OUTPUT); digitalWrite(PIN_TRIGGER, HIGH);
   pinMode(PIN_RELAY,   OUTPUT); digitalWrite(PIN_RELAY,   LOW);
 
-  Serial.println(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER ?
-                 "[Boot] Wake from deep sleep" : "[Boot] First boot / reset");
+  Serial.println("[Boot] Starting...");
 
   // ── Sensor init ──
   ultrasonic.begin(PIN_RX2, PIN_TX2);
