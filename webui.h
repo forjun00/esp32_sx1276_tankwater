@@ -100,6 +100,8 @@ void handleRoot() {
   h += "<div class='row'><span class='label'>Sensor</span><span id='d_sensor' class='badge " + String(sensorError?"err":"ok") + "'>" + String(sensorError?"Error":"OK") + "</span></div>";
   h += "<div class='row'><span class='label'>Relay</span><span id='d_relay' class='badge " + String(relayState?"ok":"warn") + "'>" + String(relayState?"ON":"OFF") + "</span></div>";
   h += "<div class='row'><span class='label'>LoRa</span><span id='d_lora' class='badge " + String(loraReady?"ok":"err") + "'>" + String(loraReady?"Ready":"Not Ready") + "</span></div>";
+  h += "<div class='row'><span class='label'>AP IP</span><span class='val'>192.168.4.1</span></div>";
+  h += "<div class='row'><span class='label'>STA IP</span><span class='val'>" + WiFi.localIP().toString() + "</span></div>";
   h += "<div class='row'><span class='label'>WiFi RSSI</span><span class='val' id='d_rssi'>" + String(WiFi.RSSI()) + " dBm</span></div>";
   h += "<div class='row'><span class='label'>LoRa FCnt</span><span class='val' id='d_fcnt'>" + String(node.getFCntUp()) + "</span></div>";
   h += "<div class='row'><span class='label'>TX Interval</span><span class='val'>" + String(lora_interval/1000) + " s</span></div>";
@@ -114,16 +116,25 @@ void handleRoot() {
     h += "<label>TX Interval (seconds)</label><input type='text' name='interval' value='" + String(lora_interval/1000) + "'>";
     h += "<input type='submit' value='Save LoRa Config'></form></div>";
 
-    h += "<div class='card'><h2>WiFi Config</h2><form method='POST'>";
+    h += "<div class='card'><h2>WiFi Config</h2><form method='POST' id='wf'>";
     h += "<label>SSID</label><input type='text' name='ssid' value='" + String(wifiSSID) + "'>";
     h += "<label>Password</label><input type='password' name='pwd' value='" + String(wifiPASS) + "'>";
-    h += "<label>DHCP</label><select name='dhcp'>";
-    h += (useDHCP=="1") ? "<option value='0'>OFF</option><option value='1' selected>ON</option>"
-                        : "<option value='0' selected>OFF</option><option value='1'>ON</option>";
+
+    // DHCP / Static toggle
+    h += "<label>Mode</label>";
+    h += "<select name='dhcp' id='dhcp_sel' onchange=\"document.getElementById('static_fields').style.display=this.value=='0'?'block':'none'\">";
+    h += (useDHCP=="0") ? "<option value='1'>DHCP (auto)</option><option value='0' selected>Static IP</option>"
+                        : "<option value='1' selected>DHCP (auto)</option><option value='0'>Static IP</option>";
     h += "</select>";
-    h += "<label>IP</label><input type='text' name='ip' value='" + localIP.toString() + "'>";
-    h += "<label>Gateway</label><input type='text' name='gw' value='" + gatewayIP.toString() + "'>";
-    h += "<label>Subnet</label><input type='text' name='subnet' value='" + subnetIP.toString() + "'>";
+
+    // Static IP fields — hidden when DHCP
+    h += "<div id='static_fields' style='display:" + String(useDHCP=="0"?"block":"none") + "'>";
+    h += "<label>IP Address</label><input type='text' name='ip'     value='" + localIP.toString()   + "'>";
+    h += "<label>Gateway</label>   <input type='text' name='gw'     value='" + gatewayIP.toString() + "'>";
+    h += "<label>Subnet</label>    <input type='text' name='subnet' value='" + subnetIP.toString()  + "'>";
+    h += "<label>DNS</label>       <input type='text' name='dns'    value='" + dnsIP.toString()     + "'>";
+    h += "</div>";
+
     h += "<input type='submit' value='Save WiFi Config'></form></div>";
 
     h += "<div class='card'><h2>OTA Update</h2>";

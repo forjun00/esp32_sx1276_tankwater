@@ -68,24 +68,32 @@ void setup() {
   loadLoRaConfig();
   loadWiFiConfig();
 
-  // ── WiFi ──
-  Serial.print("[WiFi] Connecting to " + String(wifiSSID) + " ");
-  WiFi.begin(wifiSSID, wifiPASS);
-  unsigned long t = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - t < 10000) {
-    delay(500); Serial.print(".");
-  }
-  Serial.println();
+  // ── AP mode (always on) ──
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(AP_SSID, AP_PASS);
+  Serial.println("[AP] SSID: " + String(AP_SSID) + "  IP: " + WiFi.softAPIP().toString());
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("[WiFi] " + WiFi.localIP().toString());
-    startWebServer();
-    webStarted = true;
+  // ── STA mode (connect to router if configured) ──
+  if (strlen(wifiSSID) > 0) {
+    Serial.print("[WiFi] Connecting to " + String(wifiSSID) + " ");
+    WiFi.begin(wifiSSID, wifiPASS);
+    unsigned long t = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t < 10000) {
+      delay(500); Serial.print(".");
+    }
+    Serial.println();
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("[WiFi] STA IP: " + WiFi.localIP().toString());
+    } else {
+      Serial.println("[WiFi] STA failed — AP only mode");
+    }
   } else {
-    Serial.println("[WiFi] Not connected — retrying in loop");
-    wifiLostAt  = millis();
-    wifiWasLost = true;
+    Serial.println("[WiFi] No SSID configured — AP only mode");
   }
+
+  // ── Start web server (always — AP is always up) ──
+  startWebServer();
+  webStarted = true;
 
   // ── LoRa ──
   initLoRa();
@@ -111,20 +119,13 @@ void loop() {
 
   if (pauseloop) return;
 
-  // ── WiFi reconnect ──
-  if (WiFi.status() != WL_CONNECTED) {
-    if (!wifiWasLost) { wifiWasLost = true; wifiLostAt = millis(); }
-    if (millis() - lastWiFiCheck >= 5000) {
+  // ── STA reconnect (AP always stays up regardless) ──
+  if (WiFi.status() != WL_CONNECTED && strlen(wifiSSID) > 0) {
+    if (millis() - lastWiFiCheck >= 30000) {
       lastWiFiCheck = millis();
+      Serial.println("[WiFi] Reconnecting STA...");
       WiFi.begin(wifiSSID, wifiPASS);
     }
-    if (WiFi.status() == WL_CONNECTED && !webStarted) {
-      webStarted = true; wifiWasLost = false; startWebServer();
-    }
-    if (millis() - wifiLostAt >= 30000) deepSleep(300);
-    return;
-  } else {
-    wifiWasLost = false;
   }
 
   // ── LoRa TX ──

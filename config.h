@@ -24,14 +24,19 @@ uint8_t  lora_appSKey[16] = {0xAA,0xBB,0xCC,0xDD,0xEE,0xFF,0xAA,0xBB,
                               0xAA,0xBB,0xCC,0xDD,0xEE,0xFF,0xAA,0xBB};
 unsigned long lora_interval = 120000;   // ms
 
-// ─── WiFi defaults (overridden by SPIFFS) ─────────────────────────────────────
-char      wifiSSID[32] = "AsefaIoT";
-char      wifiPASS[32] = "Asf026867766";
-IPAddress localIP(172, 16, 110, 134);
-IPAddress gatewayIP(172, 16, 110, 254);
+// ─── AP mode (always on — no router needed) ───────────────────────────────────
+const char* AP_SSID = "Tank-Config";   // hotspot name
+const char* AP_PASS = "12345678";      // hotspot password (min 8 chars)
+//                                        connect → http://192.168.4.1
+
+// ─── WiFi STA defaults (overridden by SPIFFS) ─────────────────────────────────
+char      wifiSSID[32] = "";           // empty = skip STA, AP only
+char      wifiPASS[32] = "";
+IPAddress localIP(192, 168, 1, 100);
+IPAddress gatewayIP(192, 168, 1, 1);
 IPAddress subnetIP(255, 255, 255, 0);
 IPAddress dnsIP(8, 8, 8, 8);
-String    useDHCP = "0";
+String    useDHCP   = "1";             // 1=DHCP, 0=Static
 
 // ─── Runtime state ────────────────────────────────────────────────────────────
 bool          loraReady      = false;

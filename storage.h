@@ -61,19 +61,25 @@ void loadWiFiConfig() {
 
   String s_ssid   = obj.hasOwnProperty("ssid")   ? (const char*)obj["ssid"]   : "";
   String s_pwd    = obj.hasOwnProperty("pwd")     ? (const char*)obj["pwd"]    : "";
-  String s_dhcp   = obj.hasOwnProperty("dhcp")    ? (const char*)obj["dhcp"]   : "0";
+  String s_dhcp   = obj.hasOwnProperty("dhcp")    ? (const char*)obj["dhcp"]   : "1";
   String s_ip     = obj.hasOwnProperty("ip")      ? (const char*)obj["ip"]     : "";
   String s_gw     = obj.hasOwnProperty("gw")      ? (const char*)obj["gw"]     : "";
   String s_subnet = obj.hasOwnProperty("subnet")  ? (const char*)obj["subnet"] : "";
+  String s_dns    = obj.hasOwnProperty("dns")     ? (const char*)obj["dns"]    : "";
 
   useDHCP = s_dhcp;
   if (s_ssid != "") s_ssid.toCharArray(wifiSSID, sizeof(wifiSSID));
   if (s_pwd  != "") s_pwd.toCharArray(wifiPASS,  sizeof(wifiPASS));
 
   if (s_dhcp == "0" && s_ip != "") {
+    // Static IP mode
     localIP.fromString(s_ip);
     gatewayIP.fromString(s_gw);
     subnetIP.fromString(s_subnet);
+    if (s_dns != "") dnsIP.fromString(s_dns);
     WiFi.config(localIP, gatewayIP, subnetIP, dnsIP, dnsIP);
+    Serial.printf("[WiFi] Static IP: %s  GW: %s\n", s_ip.c_str(), s_gw.c_str());
+  } else {
+    Serial.println("[WiFi] DHCP mode");
   }
 }
