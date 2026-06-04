@@ -39,7 +39,7 @@ jobs:
           arduino-cli compile \
             --fqbn esp32:esp32:esp32 \
             --output-dir build \
-            esp32_sx1276_tankwater/esp32_sx1276_tankwater.ino
+            .
 
       # ── Upload .bin as artifact ────────────────────────────────
       - name: Upload firmware artifact
