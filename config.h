@@ -14,7 +14,7 @@
 // ─── Project info ─────────────────────────────────────────────────────────────
 const String Projectname = "Tank Water Level";
 const String FW_VERSION  = "v2.0-LoRa";
-const String deviceSN    = "SI17507378760841";
+String       deviceSN    = "SI17507378760841";   // editable via web config
 
 // ─── LoRa default keys (overridden by SPIFFS) ────────────────────────────────
 uint32_t lora_devAddr     = 0x01020304;

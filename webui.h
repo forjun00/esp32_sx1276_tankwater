@@ -32,6 +32,17 @@ void handleRoot() {
     if (server.hasArg("pause"))   pauseloop = true;
     if (server.hasArg("unpause")) pauseloop = false;
 
+    // Save Device SN
+    if (server.hasArg("device_sn")) {
+      saveDeviceSN(server.arg("device_sn"));
+      String url  = "http://" + WiFi.softAPIP().toString() + "/";
+      String html = "<script>alert('Device SN saved! Restarting...');location.replace('" + url + "');</script>";
+      server.send(200, "text/html", html);
+      delay(1000);
+      ESP.restart();
+      return;
+    }
+
     if (server.hasArg("devaddr")) {
       JSONVar d;
       d["devaddr"]  = server.arg("devaddr");
@@ -109,6 +120,14 @@ void handleRoot() {
   h += "</div>";
 
   if (pauseloop) {
+
+    // Device SN
+    h += "<div class='card'><h2>Device Serial Number</h2><form method='POST'>";
+    h += "<label>Device SN</label>";
+    h += "<input type='text' name='device_sn' value='" + deviceSN + "' placeholder='e.g. SI17507378760841'>";
+    h += "<small style='color:#888;font-size:12px'>Changing SN will restart the device</small><br><br>";
+    h += "<input type='submit' value='Save & Restart'></form></div>";
+
     h += "<div class='card'><h2>LoRa Config (ABP)</h2><form method='POST'>";
     h += "<label>DevAddr</label><input type='text' name='devaddr' value='" + String(lora_devAddr,HEX) + "'>";
     h += "<label>NwkSKey</label><input type='text' name='nwkskey' value='" + bytesToHexStr(lora_nwkSKey,16) + "'>";

@@ -54,6 +54,7 @@ void setup() {
 
   // ── SPIFFS ──
   if (!SPIFFS.begin(true)) { Serial.println("[SPIFFS] Mount failed"); return; }
+  loadDeviceSN();
   loadLoRaConfig();
   loadWiFiConfig();
 

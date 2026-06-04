@@ -9,6 +9,35 @@
 
 extern WebServer server;   // defined in webui.h
 
+// ─── Device SN ───────────────────────────────────────────────────────────────
+#define DEVICE_SN_FILE "/device_sn.txt"
+
+void loadDeviceSN() {
+  String val = readFile(DEVICE_SN_FILE);   // forward use — readFile defined below
+  // will be called after readFile is defined, so use SPIFFS directly here
+  File f = SPIFFS.open(DEVICE_SN_FILE);
+  if (!f || f.isDirectory()) return;
+  String sn;
+  while (f.available()) sn += (char)f.read();
+  f.close();
+  sn.trim();
+  if (sn.length() > 0) {
+    deviceSN = sn;
+    Serial.println("[Config] DeviceSN: " + deviceSN);
+  }
+}
+
+void saveDeviceSN(String sn) {
+  sn.trim();
+  if (sn.length() == 0) return;
+  File f = SPIFFS.open(DEVICE_SN_FILE, FILE_WRITE);
+  if (!f) return;
+  f.print(sn);
+  f.close();
+  deviceSN = sn;
+  Serial.println("[Config] DeviceSN saved: " + deviceSN);
+}
+
 // ─── Read / Write ─────────────────────────────────────────────────────────────
 String readFile(const char* path) {
   File f = SPIFFS.open(path);
