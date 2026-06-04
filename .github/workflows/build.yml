@@ -1,0 +1,50 @@
+name: Build Firmware
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:    # allow manual trigger from GitHub website
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ── Checkout code ──────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Install arduino-cli ────────────────────────────────────
+      - name: Install arduino-cli
+        uses: arduino/setup-arduino-cli@v1
+
+      # ── Install ESP32 core ─────────────────────────────────────
+      - name: Install ESP32 core
+        run: |
+          arduino-cli core update-index \
+            --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core install esp32:esp32 \
+            --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+      # ── Install libraries ──────────────────────────────────────
+      - name: Install libraries
+        run: |
+          arduino-cli lib install "RadioLib"
+          arduino-cli lib install "Arduino_JSON"
+
+      # ── Compile ────────────────────────────────────────────────
+      - name: Compile firmware
+        run: |
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32 \
+            --output-dir build \
+            esp32_sx1276_tankwater/esp32_sx1276_tankwater.ino
+
+      # ── Upload .bin as artifact ────────────────────────────────
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: build/*.bin
+          retention-days: 30
