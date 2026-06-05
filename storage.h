@@ -47,8 +47,10 @@ void writeFileAndRedirect(const char* path, const char* content) {
   server.send(200, "text/html", html);
 }
 
-// ─── Device SN ───────────────────────────────────────────────────────────────
-#define DEVICE_SN_FILE "/device_sn.txt"
+// ─── File paths — max 31 chars for SPIFFS ────────────────────────────────────
+#define DEVICE_SN_FILE  "/sn.txt"          //  8 chars ✓
+#define LORA_CFG_FILE   "/lora_cfg.txt"    // 13 chars ✓
+#define WIFI_CFG_FILE   "/wifi_cfg.txt"    // 13 chars ✓
 
 void loadDeviceSN() {
   // readFile is defined above so safe to call here
@@ -73,7 +75,7 @@ void saveDeviceSN(String sn) {
 
 // ─── Load LoRa config ─────────────────────────────────────────────────────────
 void loadLoRaConfig() {
-  String content = readFile(("/" + deviceSN + "_lora_config.txt").c_str());
+  String content = readFile(LORA_CFG_FILE);
   if (content == "") { Serial.println("[LoRa] No config — using defaults"); return; }
 
   JSONVar obj = JSON.parse(content);
@@ -94,7 +96,7 @@ void loadLoRaConfig() {
 
 // ─── Load WiFi config ─────────────────────────────────────────────────────────
 void loadWiFiConfig() {
-  String content = readFile(("/" + deviceSN + "_config.txt").c_str());
+  String content = readFile(WIFI_CFG_FILE);
   if (content == "") return;
 
   JSONVar obj = JSON.parse(content);

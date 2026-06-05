@@ -50,8 +50,7 @@ void handleRoot() {
       d["nwkskey"]  = server.arg("nwkskey");
       d["appskey"]  = server.arg("appskey");
       d["interval"] = server.arg("interval").toInt();
-      writeFileAndRedirect(("/" + deviceSN + "_lora_config.txt").c_str(),
-                           JSON.stringify(d).c_str());
+      writeFileAndRedirect(LORA_CFG_FILE, JSON.stringify(d).c_str());
       return;
     }
     if (server.hasArg("ssid")) {
@@ -62,8 +61,7 @@ void handleRoot() {
       d["ip"]     = server.arg("ip");
       d["gw"]     = server.arg("gw");
       d["subnet"] = server.arg("subnet");
-      writeFileAndRedirect(("/" + deviceSN + "_config.txt").c_str(),
-                           JSON.stringify(d).c_str());
+      writeFileAndRedirect(WIFI_CFG_FILE, JSON.stringify(d).c_str());
       return;
     }
   }
