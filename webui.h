@@ -135,7 +135,7 @@ input[type=file]{font-family:var(--mono);font-size:12px;color:var(--dim);margin:
 
 // ─── Static JS in flash ───────────────────────────────────────────────────────
 static const char PAGE_JS[] PROGMEM = R"JS(
-var SENSOR_MIN=28,SENSOR_MAX=750;
+var SENSOR_MIN=30,SENSOR_MAX=230;
 function $(id){return document.getElementById(id);}
 function upd(){
  fetch('/status').then(function(r){return r.json();}).then(function(d){

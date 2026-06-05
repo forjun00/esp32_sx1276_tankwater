@@ -8,8 +8,11 @@
 #define PIN_RELAY    25    // Relay (HIGH=ON, LOW=OFF)
 
 // ─── Sensor limits ────────────────────────────────────────────────────────────
-#define SENSOR_MIN_CM  28
-#define SENSOR_MAX_CM 750
+// Sensor is mounted 30 cm above water surface.
+// Full tank  → sensor reads ~30 cm  (SENSOR_MIN_CM)
+// Empty tank → sensor reads ~230 cm (30 cm mount + 200 cm water depth)
+#define SENSOR_MIN_CM   30   // distance when tank FULL  (cm)
+#define SENSOR_MAX_CM  230   // distance when tank EMPTY (cm)
 
 // ─── Project info ─────────────────────────────────────────────────────────────
 const String Projectname = "Tank Water Level";
