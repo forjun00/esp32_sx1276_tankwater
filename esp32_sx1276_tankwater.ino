@@ -57,6 +57,7 @@ void setup() {
   loadDeviceSN();
   loadLoRaConfig();
   loadWiFiConfig();
+  loadTxOffset();
 
   // ── AP mode (always on) ──
   WiFi.mode(WIFI_AP_STA);
@@ -87,7 +88,8 @@ void setup() {
 
   // ── LoRa ──
   initLoRa();
-  lastLoRaTx = millis() - lora_interval;   // TX immediately on first loop
+  // First TX fires at lora_tx_offset ms after boot (0 = immediately)
+  lastLoRaTx = millis() - lora_interval + lora_tx_offset;
 
   Serial.println("──────────────── Setup complete ────────────────");
 }
@@ -116,6 +118,12 @@ void loop() {
       Serial.println("[WiFi] Reconnecting STA...");
       WiFi.begin(wifiSSID, wifiPASS);
     }
+  }
+
+  // ── Save TX offset to SPIFFS if downlink set a new one ──
+  if (txOffsetNeedsSave) {
+    txOffsetNeedsSave = false;
+    saveTxOffset(pendingTxOffset);
   }
 
   // ── LoRa TX ──

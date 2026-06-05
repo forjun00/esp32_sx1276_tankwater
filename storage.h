@@ -51,6 +51,7 @@ void writeFileAndRedirect(const char* path, const char* content) {
 #define DEVICE_SN_FILE  "/sn.txt"          //  8 chars ✓
 #define LORA_CFG_FILE   "/lora_cfg.txt"    // 13 chars ✓
 #define WIFI_CFG_FILE   "/wifi_cfg.txt"    // 13 chars ✓
+#define TXOFF_FILE      "/txoff.txt"       // 10 chars ✓
 
 void loadDeviceSN() {
   // readFile is defined above so safe to call here
@@ -71,6 +72,24 @@ void saveDeviceSN(String sn) {
   f.close();
   deviceSN = sn;
   Serial.println("[Config] DeviceSN saved: " + deviceSN);
+}
+
+// ─── TX offset (server-assigned slot) ────────────────────────────────────────
+void loadTxOffset() {
+  String val = readFile(TXOFF_FILE);
+  val.trim();
+  if (val.length() > 0) {
+    lora_tx_offset = (unsigned long)val.toInt() * 1000UL;
+    Serial.println("[Config] TX offset: " + String(lora_tx_offset / 1000) + "s");
+  }
+}
+
+void saveTxOffset(uint8_t offset_sec) {
+  File f = SPIFFS.open(TXOFF_FILE, FILE_WRITE);
+  if (!f) { Serial.println("[SPIFFS] ERROR: Cannot save TX offset"); return; }
+  f.print(offset_sec);
+  f.close();
+  Serial.println("[Config] TX offset saved: " + String(offset_sec) + "s");
 }
 
 // ─── Load LoRa config ─────────────────────────────────────────────────────────

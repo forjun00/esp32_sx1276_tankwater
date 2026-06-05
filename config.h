@@ -41,6 +41,11 @@ IPAddress subnetIP(255, 255, 255, 0);
 IPAddress dnsIP(8, 8, 8, 8);
 String    useDHCP   = "1";             // 1=DHCP, 0=Static
 
+// ─── TX offset (assigned by server via downlink 0x02) ─────────────────────────
+unsigned long lora_tx_offset    = 0;     // ms — delay first TX after boot
+bool          txOffsetNeedsSave = false; // flag: save offset to SPIFFS in loop()
+uint8_t       pendingTxOffset   = 0;     // seconds — pending save value
+
 // ─── Runtime state ────────────────────────────────────────────────────────────
 bool          loraReady      = false;
 bool          relayState     = false;

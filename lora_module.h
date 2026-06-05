@@ -60,6 +60,18 @@ void handleDownlink(uint8_t* buf, size_t len) {
       digitalWrite(PIN_RELAY, LOW);
       Serial.println("[Relay] OFF");
       break;
+    case 0x02:                             // Set TX offset (server time-slotting)
+      if (len >= 2) {
+        uint8_t offset_sec = buf[1];
+        lora_tx_offset    = (unsigned long)offset_sec * 1000UL;
+        // Reschedule next TX: fire in offset_sec seconds from now
+        lastLoRaTx        = millis() - lora_interval + lora_tx_offset;
+        pendingTxOffset   = offset_sec;
+        txOffsetNeedsSave = true;
+        Serial.printf("[Downlink] TX offset set: %us  next TX in ~%us\n",
+                      offset_sec, offset_sec);
+      }
+      break;
     default:
       Serial.println("[Downlink] Unknown cmd: 0x" + String(buf[0], HEX));
       break;
@@ -72,14 +84,18 @@ void sendLoRa(int distCM, float volt) {
 
   uint16_t d = (uint16_t)constrain(distCM, 0, 65535);
   uint16_t v = (uint16_t)(volt * 100.0f);
-  uint8_t  payload[4] = { (uint8_t)(d>>8), (uint8_t)(d&0xFF),
-                           (uint8_t)(v>>8), (uint8_t)(v&0xFF) };
+  // Payload: [dist_hi, dist_lo, volt_hi, volt_lo, tx_offset_sec]
+  // Byte 4 reports current TX offset so server can confirm assignment
+  uint8_t  payload[5] = { (uint8_t)(d>>8), (uint8_t)(d&0xFF),
+                           (uint8_t)(v>>8), (uint8_t)(v&0xFF),
+                           (uint8_t)(lora_tx_offset / 1000) };
 
   // Downlink buffer — passed directly into sendReceive
   uint8_t downBuf[255];
   size_t  downLen = sizeof(downBuf);
 
-  Serial.printf("[LoRa] TX dist=%dcm volt=%.2fV ... ", distCM, volt);
+  Serial.printf("[LoRa] TX dist=%dcm volt=%.2fV offset=%lus ... ",
+                distCM, volt, lora_tx_offset / 1000);
   int state = node.sendReceive(payload, sizeof(payload), 1, downBuf, &downLen);
 
   if (state > 0) {
