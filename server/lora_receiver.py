@@ -29,6 +29,12 @@ from datetime import datetime, timezone, timedelta
 from Crypto.Cipher import AES
 from Crypto.Hash  import CMAC
 
+try:
+    import paho.mqtt.client as mqtt_lib
+    _MQTT_AVAILABLE = True
+except ImportError:
+    _MQTT_AVAILABLE = False
+
 BKK        = timezone(timedelta(hours=7))   # Bangkok UTC+7
 _PUSH_DATA = 0x00
 _PULL_DATA = 0x02
@@ -46,6 +52,50 @@ class LoRaReceiver:
         self._gw_addr          = None # gateway UDP address (from PULL_DATA)
         self._gw_token         = 0    # last PULL_DATA token
         self._assigned_offsets = {}   # name → assigned offset_sec (int)
+        self._mqtt_client      = None
+        self._mqtt_topic_prefix = "lora"
+
+    # ── MQTT ──────────────────────────────────────────────────────────────────
+
+    def enable_mqtt(self, broker: str = "localhost", port: int = 1883,
+                    topic_prefix: str = "lora"):
+        """
+        Enable MQTT publishing. Publishes every uplink to:
+            {topic_prefix}/{device_name}/data   → full JSON
+            {topic_prefix}/{device_name}/distance → distance_cm (plain number)
+            {topic_prefix}/{device_name}/voltage  → voltage (plain number)
+
+        Requirements: pip install paho-mqtt
+
+        Example:
+            lora.enable_mqtt("localhost", 1883, "lora")
+            # Publishes to: lora/tank_1/data, lora/tank_1/distance, etc.
+        """
+        if not _MQTT_AVAILABLE:
+            raise ImportError("paho-mqtt required: pip install paho-mqtt")
+        self._mqtt_topic_prefix = topic_prefix
+        self._mqtt_client = mqtt_lib.Client()
+        self._mqtt_client.on_connect = lambda c, u, f, rc: print(
+            f"[MQTT] Connected to {broker}:{port} ✅" if rc == 0
+            else f"[MQTT] Connect failed: rc={rc}")
+        self._mqtt_client.on_disconnect = lambda c, u, rc: print(
+            f"[MQTT] Disconnected (rc={rc})")
+        self._mqtt_client.connect(broker, port, keepalive=60)
+        self._mqtt_client.loop_start()
+        print(f"[MQTT] Connecting to {broker}:{port}  prefix='{topic_prefix}'")
+
+    def _mqtt_publish(self, name: str, data: dict):
+        """Publish sensor data to MQTT broker."""
+        if self._mqtt_client is None:
+            return
+        prefix = f"{self._mqtt_topic_prefix}/{name}"
+        # Full JSON to .../data
+        self._mqtt_client.publish(f"{prefix}/data", json.dumps(data))
+        # Individual fields for easy dashboard integration
+        self._mqtt_client.publish(f"{prefix}/distance", data.get("distance_cm", 0))
+        self._mqtt_client.publish(f"{prefix}/voltage",  data.get("voltage",     0))
+        self._mqtt_client.publish(f"{prefix}/rssi",     data.get("rssi",        0))
+        print(f"[MQTT] Published → {prefix}/data")
 
     # ── Register devices ──────────────────────────────────────────────────────
 
@@ -299,6 +349,9 @@ class LoRaReceiver:
             payload, fport = device["pending_downlink"]
             self._send_downlink(device, payload, fport)
             device["pending_downlink"] = None
+
+        # ── Publish to MQTT if enabled ────────────────────────────────────────
+        self._mqtt_publish(device['name'], sensors)
 
         return (device['name'], sensors)
 
