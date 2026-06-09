@@ -512,8 +512,18 @@ class LoRaReceiver:
         #   [0-1] distance cm     (uint16 big-endian)
         #   [2-3] voltage×100     (uint16 big-endian)
         #   [4]   tx_offset (sec) (uint8) — node reports current assigned offset
+        dist     = (data[0] << 8) | data[1]
+        volt_raw = (data[2] << 8) | data[3]
+
+        # Sanity check — filter garbage from wrong decryption on first packet
+        # dist > 500cm or volt > 20V is physically impossible for this sensor
+        if dist > 500 or volt_raw > 2000:
+            print(f"  [Decode] Sanity FAIL dist={dist}cm volt={volt_raw/100:.2f}V"
+                  f" — likely wrong key/FCnt, skipping packet")
+            return None
+
         return {
-            'distance_cm': ((data[0] << 8) | data[1]),
-            'voltage':     ((data[2] << 8) | data[3]) / 100.0,
+            'distance_cm': dist,
+            'voltage':     volt_raw / 100.0,
             'tx_offset':   data[4] if len(data) >= 5 else 0,
         }
