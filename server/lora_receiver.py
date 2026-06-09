@@ -481,11 +481,19 @@ class LoRaReceiver:
             frame = base64.b64decode(data_b64)
             if len(frame) < 12:
                 return None
+            # FCtrl byte[5]: lower 4 bits = FOptsLen (MAC commands in header)
+            # Must skip FOpts to find FPort and payload correctly
+            fopts_len    = frame[5] & 0x0F
+            fport_idx    = 8 + fopts_len      # FPort is after MHDR+DevAddr+FCtrl+FCnt+FOpts
+            payload_start = fport_idx + 1     # payload starts after FPort
+            if fopts_len > 0:
+                print(f"  [Frame] FOptsLen={fopts_len} — MAC commands present, "
+                      f"payload offset adjusted to {payload_start}")
             return {
                 'dev_addr':    f"{struct.unpack_from('<I', frame, 1)[0]:08X}",
                 'fcnt':        struct.unpack_from('<H', frame, 6)[0],
-                'fport':       frame[8] if len(frame) > 8 else None,
-                'enc_payload': frame[9:-4] if len(frame) > 12 else None,
+                'fport':       frame[fport_idx] if len(frame) > fport_idx else None,
+                'enc_payload': frame[payload_start:-4] if len(frame) > payload_start + 4 else None,
                 'mic':         frame[-4:].hex().upper(),
             }
         except Exception:
