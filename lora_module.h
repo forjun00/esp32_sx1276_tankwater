@@ -101,18 +101,18 @@ void sendLoRa(int distCM, float volt) {
   Serial.print("[LoRa] Sending ... ");
   int state = node.sendReceive(payload, sizeof(payload), 1, downBuf, &downLen);
 
-  if (state > 0) {
+  // -1112 = RADIOLIB_LORAWAN_NO_DOWNLINK — TX succeeded, RX window found nothing
+  // Always check downLen first regardless of state code
+  if (downLen > 0) {
     Serial.printf("OK + Downlink  FCnt:%d  downLen:%d\n", node.getFCntUp(), downLen);
-    if (downLen > 0) {
-      Serial.print("[Downlink RAW] ");
-      for (size_t i = 0; i < downLen; i++) Serial.printf("%02X ", downBuf[i]);
-      Serial.println();
-      handleDownlink(downBuf, downLen);
-    } else {
-      Serial.println("[Downlink] MAC only (no user payload)");
-    }
-  } else if (state == 0) {
+    Serial.print("[Downlink RAW] ");
+    for (size_t i = 0; i < downLen; i++) Serial.printf("%02X ", downBuf[i]);
+    Serial.println();
+    handleDownlink(downBuf, downLen);
+  } else if (state >= 0) {
     Serial.println("OK  FCnt:" + String(node.getFCntUp()));
+  } else if (state == -1112) {
+    Serial.println("OK (no downlink)  FCnt:" + String(node.getFCntUp()));
   } else {
     Serial.println("FAILED: " + String(state));
   }
