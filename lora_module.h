@@ -94,13 +94,23 @@ void sendLoRa(int distCM, float volt) {
   uint8_t downBuf[255];
   size_t  downLen = sizeof(downBuf);
 
-  Serial.printf("[LoRa] TX dist=%dcm volt=%.2fV offset=%lus ... ",
+  Serial.printf("[LoRa] TX dist=%dcm volt=%.2fV offset=%lus\n",
                 distCM, volt, lora_tx_offset / 1000);
+  Serial.printf("[Payload] %02X %02X %02X %02X %02X\n",
+                payload[0], payload[1], payload[2], payload[3], payload[4]);
+  Serial.print("[LoRa] Sending ... ");
   int state = node.sendReceive(payload, sizeof(payload), 1, downBuf, &downLen);
 
   if (state > 0) {
-    Serial.println("OK + Downlink  FCnt:" + String(node.getFCntUp()));
-    if (downLen > 0) handleDownlink(downBuf, downLen);
+    Serial.printf("OK + Downlink  FCnt:%d  downLen:%d\n", node.getFCntUp(), downLen);
+    if (downLen > 0) {
+      Serial.print("[Downlink RAW] ");
+      for (size_t i = 0; i < downLen; i++) Serial.printf("%02X ", downBuf[i]);
+      Serial.println();
+      handleDownlink(downBuf, downLen);
+    } else {
+      Serial.println("[Downlink] MAC only (no user payload)");
+    }
   } else if (state == 0) {
     Serial.println("OK  FCnt:" + String(node.getFCntUp()));
   } else {

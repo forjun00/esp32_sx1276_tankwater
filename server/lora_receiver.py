@@ -311,6 +311,11 @@ class LoRaReceiver:
         if decrypted is None:
             return None
 
+        # ── Debug: print raw frame info to help diagnose wrong values ─────────
+        print(f"  [Debug] FCnt={frame['fcnt']}  FPort={frame['fport']}  "
+              f"enc={frame['enc_payload'].hex().upper()}  "
+              f"dec={decrypted.hex().upper()}")
+
         sensors = self._decode_sensors(decrypted)
         if sensors is None:
             return None
