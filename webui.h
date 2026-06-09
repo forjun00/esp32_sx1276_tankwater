@@ -173,7 +173,7 @@ void handleStatus() {
   j += "\"rssi\":"    + String(WiFi.RSSI())    + ",";
   j += "\"fcnt\":"    + String(node.getFCntUp()) + ",";
   j += "\"lora\":"    + String(loraReady ? 1 : 0) + ",";
-  j += "\"relay\":"   + String(relayState ? 1 : 0) + ",";
+  j += "\"relay\":"   + String(digitalRead(PIN_RELAY) ? 1 : 0) + ",";
   j += "\"uptime\":"  + String(millis() / 1000) + ",";
   j += "\"pause\":"   + String(pauseloop ? 1 : 0) + ",";
   j += "\"spiffs_free\":" + String(SPIFFS.totalBytes() - SPIFFS.usedBytes());
@@ -291,7 +291,7 @@ void handleRoot() {
   h += "<section class='hud status-card'><div class='tag'>System Telemetry</div><div class='rows'>";
   h += "<div class='row'><span class='l'>Sensor</span><span id='b_sensor' class='badge " + String(sensorError?"b-err":"b-ok") + "'>&#9679; " + String(sensorError?"Err":"OK") + "</span></div>";
   h += "<div class='row'><span class='l'>RF Link</span><span id='b_lora' class='badge " + String(loraReady?"b-ok":"b-err") + "'>&#9679; " + String(loraReady?"Ready":"Error") + "</span></div>";
-  h += "<div class='row'><span class='l'>Relay</span><span id='b_relay' class='badge " + String(relayState?"b-ok":"b-warn") + "'>&#9679; " + String(relayState?"ON":"OFF") + "</span></div>";
+  h += "<div class='row'><span class='l'>Relay</span><span id='b_relay' class='badge " + String(digitalRead(PIN_RELAY)?"b-ok":"b-warn") + "'>&#9679; " + String(digitalRead(PIN_RELAY)?"ON":"OFF") + "</span></div>";
   h += "<div class='row'><span class='l'>WiFi RSSI</span><span class='v'><span id='v_rssi2'>" + String(WiFi.RSSI()) + "</span> dBm</span></div>";
   h += "<div class='row'><span class='l'>LoRa FCnt</span><span class='v' id='v_fcnt2'>" + String(node.getFCntUp()) + "</span></div>";
   h += "<div class='row'><span class='l'>TX Interval</span><span class='v'>" + String(lora_interval/1000) + " s</span></div>";
